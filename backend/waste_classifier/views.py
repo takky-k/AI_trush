@@ -50,13 +50,20 @@ class ClassifyByOpenAI(APIView):
             return Response({'error': 'Item is required.'}, status=400)
         print(f"Item: {item}")
         prompt = f"""
-            Based on the following product information, determine the type of garbage it would belong to (e.g., recyclable, organic, general waste, etc.):
+Based on the following product information, determine the type of garbage it belongs to using these specific rules:
 
-            Product Name: {item}
+1. If the product is related to mixed containers, paper, packaging, cardboard, glass bottles, or jars, classify it as: **Recycling**.
+2. If the product is related to food scraps, classify it as: **Organics**.
+3. If the product is related to yard trimmings or anything not covered by the above categories, classify it as: **Garbage**.
 
-            Answer in the following sentence format:
-            "<Product Name> belongs to <garbage type>"
-            """
+Follow these rules strictly and do not invent new categories.
+
+Product Name: {item}
+
+Answer in the following sentence format:
+"<Product Name> belongs to <garbage type>"
+"""
+
         print(prompt)
         text = call_openai(prompt)
         print(text)
@@ -68,7 +75,6 @@ class ClassifyByTensorF(APIView):
     def post(self, request):
         if request.path.endswith('/favicon.ico'):
             return Response({'message': 'Ignored favicon request'}, status=204)
-        print("こんにちわん")
         file: UploadedFile = request.FILES.get("image")
         if not file:
             return Response({'error': 'No image file provided.'}, status=400)
@@ -120,8 +126,13 @@ class ClassifyWaste(APIView):
             
             # open ai
             prompt = f"""
-            Based on the following product information, determine the type of garbage it would belong to (e.g., recyclable, organic, general waste, etc.):
+            Based on the following product information, determine the type of garbage it belongs to using these specific rules:
 
+1. If the product is related to mixed containers, paper, packaging, cardboard, glass bottles, or jars, classify it as: **Recycling**.
+2. If the product is related to food scraps, classify it as: **Organics**.
+3. If the product is related to yard trimmings or anything not covered by the above categories, classify it as: **Garbage**.
+
+Follow these rules strictly and do not invent new categories.
             Product Name: {data['product']['name']}
             Description: {data['product']['description']}
             Category: {data['product']['category']}
@@ -139,7 +150,7 @@ class ClassifyWaste(APIView):
             # Handle other request exceptions
             raise APIException(f'API request failed: {req_err}')
         
-        """ あとで使う
+        """ 
         try:
             waste_item = WasteItem.objects.get(name__iexact=item_code)
             serializer = WasteItemSerializer(waste_item)
