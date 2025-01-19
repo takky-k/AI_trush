@@ -3,7 +3,12 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0; /* 余白を削除 */
+  height: 100vh; /* 画面全体を占める高さ */
+  background-image: url('/background.webp'); /* publicフォルダ内の画像を指定 */
+  background-size: cover; /* 画面全体に拡大縮小してフィット */
+  background-repeat: no-repeat; /* 画像の繰り返しを無効化 */
+  background-position: center; /* 画像を中央に配置 */
 }
 
 @layer utilities {
