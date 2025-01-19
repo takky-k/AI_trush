@@ -1,43 +1,63 @@
 'use client'
 
-import { useState } from 'react'
-import { QrCode, Camera, Search } from 'lucide-react'
-import BarcodeScanner from './BarcodeScanner'
-import CameraCapture from './CameraCapture'
-import ManualInput from './ManualInput'
-import ResultDisplay from './ResultDisplay'
+import React, { useState } from 'react';
+import { QrCode, Camera, Search } from 'lucide-react';
+import BarcodeScanner from './BarcodeScanner';
+import CameraCapture from './CameraCapture';
+import ManualInput from './ManualInput';
+import ResultDisplay from './ResultDisplay';
 
 export default function WasteSorter() {
-  const [mode, setMode] = useState<'idle' | 'barcode' | 'camera' | 'manual'>('idle')
-  const [result, setResult] = useState<string | null>(null)
+  const [mode, setMode] = useState<'idle' | 'barcode' | 'camera' | 'manual'>('idle');
+  const [result, setResult] = useState<string | null>(null);
 
   const handleResult = async (input: string) => {
     try {
-      console.log("Camera result:", input);
-      const response = await fetch('http://localhost:8000/api/classify/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ item: input }),
+      console.log("Input:", input);
+      const response = await fetch('http://localhost:8000/api/classify/waste/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
+        },
+        body: JSON.stringify({ item: input }),
       });
       const data = await response.json();
       if (data.content === undefined) {
-        setResult(`Unable to classify waste. Please try again.`)
-      }
-      else {
-        setResult(data.content)
+        setResult(`Unable to classify waste. Please try again.`);
+      } else {
+        setResult(data.content);
       }
     } catch (error) {
-      console.error('Error classifying waste:', error)
-      setResult('Unable to classify waste. Please try again.')
+      console.error('Error classifying waste:', error);
+      setResult('Unable to classify waste. Please try again.');
     }
-    setMode('idle')
-  }
+    setMode('idle');
+  };
 
-  const handleManualSearch = () => {
-    setMode('manual')
-  }
+  const handleManualSearch = async (input: string) => {
+    try {
+      console.log("Manual Input:", input);
+      const response = await fetch('http://localhost:8000/api/classify/openai/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.REACT_APP_API_KEY}`,
+        },
+        body: JSON.stringify({ item: input }),
+      });
+      const data = await response.json();
+      if (data.content === undefined) {
+        setResult(`Unable to classify waste. Please try again.`);
+      } else {
+        setResult(data.content);
+      }
+    } catch (error) {
+      console.error('Error classifying waste:', error);
+      setResult('Unable to classify waste. Please try again.');
+    }
+    setMode('idle');
+  };
 
   return (
     <div className="w-full max-w-md">
@@ -76,19 +96,24 @@ export default function WasteSorter() {
         <BarcodeScanner
           onResult={handleResult}
           onCancel={() => setMode('idle')}
-          onManualSearch={handleManualSearch}
+          onManualSearch={() => setMode('manual')}
         />
       )}
       {mode === 'camera' && (
         <CameraCapture
           onResult={handleResult}
           onCancel={() => setMode('idle')}
-          onManualSearch={handleManualSearch}
+          onManualSearch={() => setMode('manual')}
         />
       )}
-      {mode === 'manual' && <ManualInput onSubmit={handleResult} onCancel={() => setMode('idle')} />}
+      {mode === 'manual' && (
+        <ManualInput
+          onSubmit={handleManualSearch}
+          onCancel={() => setMode('idle')}
+        />
+      )}
       {result && <ResultDisplay result={result} onClose={() => setResult(null)} />}
     </div>
-  )
+  );
 }
 
