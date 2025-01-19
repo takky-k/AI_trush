@@ -7,6 +7,25 @@ from dotenv import load_dotenv
 import requests
 from rest_framework.exceptions import APIException
 import openai
+import numpy as np
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from django.core.files.uploadedfile import UploadedFile
+from rest_framework.parsers import MultiPartParser
+import tensorflow as tf
+
+# load model when app opens
+MODEL_PATH = os.path.join("models", "waste_classifier_model.h5")
+try:
+    model = tf.keras.models.load_model(MODEL_PATH)
+    print("Model loaded successfully.")
+except Exception as e:
+    print("Error loading model:", str(e))
+    model = None
+
+# mapping of classes to waste types for tensorflow model
+CLASS_MAPPING = {0: "glass", 1: "paper", 2: "cardboard", 3: "plastic", 4: "metal", 5: "trash"} 
+
 
 load_dotenv()
 def call_openai(prompt):
@@ -42,6 +61,40 @@ class ClassifyByOpenAI(APIView):
         text = call_openai(prompt)
         print(text)
         return Response({"content": text})
+    
+class ClassifyByTensorF(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        if request.path.endswith('/favicon.ico'):
+            return Response({'message': 'Ignored favicon request'}, status=204)
+        print("こんにちわん")
+        file: UploadedFile = request.FILES.get("image")
+        if not file:
+            return Response({'error': 'No image file provided.'}, status=400)
+        print("File uploaded:", file.name)
+        
+        try:
+            # 画像をテンソル形式に変換
+            temp_path = f"/tmp/{file.name}"
+            with open(temp_path, "wb") as f:
+                for chunk in file.chunks():
+                    f.write(chunk)
+            img = load_img(temp_path, target_size=(150, 150))  # モデルに合わせたサイズ
+            img_array = img_to_array(img) / 255.0  # 正規化
+            img_array = np.expand_dims(img_array, axis=0)  # バッチ次元を追加
+
+            # モデルで推論を実行
+            predictions = model.predict(img_array)
+            print("Prediction:", predictions)
+            predicted_class = np.argmax(predictions)
+            result = CLASS_MAPPING[predicted_class]
+            print("Predicted class:", result)
+
+            # 結果をレスポンスとして返す
+            return Response({"content": result})
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
 
 class ClassifyWaste(APIView):
     def post(self, request):
