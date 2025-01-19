@@ -25,64 +25,43 @@ export default function BarcodeScanner({ onResult, onCancel, onManualSearch }: B
               height: 480,
               facingMode: 'environment',
             },
-            target: scannerRef.current,
+            target: scannerRef.current, // Use the ref to attach the video stream
           },
-          locator: {
-            patchSize: 'medium',
-            halfSample: true,
-          },
-          numOfWorkers: 2,
           decoder: {
-            readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader'],
+            readers: ['ean_reader', 'upc_reader'], // Specify the barcode format (e.g., EAN-13)
           },
-          locate: true,
+          locate: true, // Locate the barcode in the image
         },
         (err) => {
           if (err) {
-            console.error('Error initializing Quagga:', err)
+            console.error(err)
+            setScanFailed(true)
             return
           }
           Quagga.start()
         }
       )
 
-      Quagga.onDetected((result) => {
-        if (result.codeResult.code) {
-          onResult(result.codeResult.code)
+      Quagga.onDetected((data) => {
+        if (data && data.codeResult && data.codeResult.code) {
+          console.log('スキャン:', data);
           Quagga.stop()
+          onResult(data.codeResult.code)
         }
       })
 
-      // Set a timeout to show the manual search button if scanning fails
-      const timeout = setTimeout(() => {
-        setScanFailed(true)
-      }, 10000) // 10 seconds timeout
-
       return () => {
         Quagga.stop()
-        clearTimeout(timeout)
       }
     }
   }, [onResult])
 
   return (
-    <div className="relative">
-      <div ref={scannerRef} className="w-full h-64 bg-gray-200 rounded-lg overflow-hidden" />
-      {scanFailed && (
-        <button
-          onClick={onManualSearch}
-          className="mt-4 w-full bg-purple-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-purple-600 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
-        >
-          <Search className="inline-block mr-2" />
-          Search Manually
-        </button>
-      )}
-      <button
-        onClick={onCancel}
-        className="mt-2 w-full bg-red-500 text-white py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-      >
-        Cancel
-      </button>
+    <div>
+      <div ref={scannerRef} style={{ width: '100%', height: '100%' }} />
+      {scanFailed && <p>Failed to initialize barcode scanner. Please try again.</p>}
+      <button onClick={onCancel}>Cancel</button>
+      <button onClick={onManualSearch}>Manual Search</button>
     </div>
   )
 }
