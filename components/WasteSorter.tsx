@@ -15,14 +15,19 @@ export default function WasteSorter() {
     try {
       console.log("Camera result:", input);
       const response = await fetch('http://localhost:8000/api/classify/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ item: input }),
-      })
-      const data = await response.json()
-      setResult(`${data.name} is classified as ${data.category} and is collected on ${data.collection_day} in Vancouver.`)
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ item: input }),
+      });
+      const data = await response.json();
+      if (data.content === undefined) {
+        setResult(`Unable to classify waste. Please try again.`)
+      }
+      else {
+        setResult(data.content)
+      }
     } catch (error) {
       console.error('Error classifying waste:', error)
       setResult('Unable to classify waste. Please try again.')

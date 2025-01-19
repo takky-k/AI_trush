@@ -3,9 +3,12 @@ from rest_framework.response import Response
 from .models import WasteItem
 from .serializers import WasteItemSerializer
 import os
+from dotenv import load_dotenv
 import requests
 from rest_framework.exceptions import APIException
+import openai
 
+load_dotenv()
 class ClassifyWaste(APIView):
     def post(self, request):
         item_code = request.data.get('item')
@@ -14,6 +17,7 @@ class ClassifyWaste(APIView):
         if not item_code:
             return Response({'error': 'Item code is required.'}, status=400)
         api_key = os.getenv('BARCODE_API')
+        print(f"api_key: {api_key}")
         api_url = f"https://go-upc.com/api/v1/code/{item_code}"
         # Make the API request
         try:
@@ -25,8 +29,40 @@ class ClassifyWaste(APIView):
             response.raise_for_status()
             # Parse the response JSON
             data = response.json()
+            if data:
+                print(data)
+            
+            # open ai
+            load_dotenv()
+            gpt_key = os.getenv('OPENAI_API')
+            print(f"api_key: {gpt_key}")
+            if not gpt_key:
+                raise ValueError("OpenAI API key is missing. Please set it as 'OPENAI_API' in your environment variables.")
+            openai.api_key = gpt_key
+            prompt = f"""
+            Based on the following product information, determine the type of garbage it would belong to (e.g., recyclable, organic, general waste, etc.):
+
+            Product Name: {data['product']['name']}
+            Description: {data['product']['description']}
+            Category: {data['product']['category']}
+            Ingredients: {data['product']['ingredients']['text']}
+
+            Answer in the following sentence format:
+            "<Product Name> belongs to <garbage type>"
+            """
+            response = openai.ChatCompletion.create(
+                    model = "gpt-3.5-turbo",
+                    messages = [
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.2
+                )
+            
             # Process and return the relevant data to the client
-            return Response(data)
+            text = response['choices'][0]['message']['content']
+            print(text)
+            return Response({"content": text})
         except requests.exceptions.HTTPError as http_err:
             # Handle HTTP errors
             return Response({'error': f'HTTP error occurred: {http_err}'}, status=response.status_code)
