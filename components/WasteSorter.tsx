@@ -13,6 +13,7 @@ export default function WasteSorter() {
 
   const handleResult = async (input: string) => {
     try {
+      console.log("Camera result:", input);
       const response = await fetch('http://localhost:8000/api/classify/', {
         method: 'POST',
         headers: {
