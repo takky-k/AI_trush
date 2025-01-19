@@ -26,10 +26,21 @@ def call_openai(prompt):
 
 class ClassifyByOpenAI(APIView):
     def post(self, request):
-        prompt = request.data.get('prompt')
-        if not prompt:
-            return Response({'error': 'Prompt is required.'}, status=400)
+        item = request.data.get('item')
+        if not item:
+            return Response({'error': 'Item is required.'}, status=400)
+        print(f"Item: {item}")
+        prompt = f"""
+            Based on the following product information, determine the type of garbage it would belong to (e.g., recyclable, organic, general waste, etc.):
+
+            Product Name: {item}
+
+            Answer in the following sentence format:
+            "<Product Name> belongs to <garbage type>"
+            """
+        print(prompt)
         text = call_openai(prompt)
+        print(text)
         return Response({"content": text})
 
 class ClassifyWaste(APIView):
