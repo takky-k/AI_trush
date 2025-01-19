@@ -13,6 +13,7 @@ from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from django.core.files.uploadedfile import UploadedFile
 from rest_framework.parsers import MultiPartParser
 import tensorflow as tf
+import urllib.parse
 
 # load model when app opens
 MODEL_PATH = os.path.join("models", "waste_classifier_model.h5")
@@ -110,7 +111,9 @@ class ClassifyWaste(APIView):
             return Response({'error': 'Item code is required.'}, status=400)
         api_key = os.getenv('BARCODE_API')
         print(f"api_key: {api_key}")
-        api_url = f"https://go-upc.com/api/v1/code/{item_code}"
+        #api_url = f"https://go-upc.com/api/v1/code/{item_code}"
+        encoded_barcode = urllib.parse.quote(item_code, encoding="utf-8")
+        api_url = f"https://api.jancodelookup.com/?appId={api_key}&query={encoded_barcode}&hits=1&page=1&type=code"
         # Make the API request
         try:
             headers = {
@@ -133,10 +136,10 @@ class ClassifyWaste(APIView):
 3. If the product is related to yard trimmings or anything not covered by the above categories, classify it as: **Garbage**.
 
 Follow these rules strictly and do not invent new categories.
-            Product Name: {data['product']['name']}
-            Description: {data['product']['description']}
-            Category: {data['product']['category']}
-            Ingredients: {data['product']['ingredients']['text']}
+           Product Name: {data['product'][0]['itemName']}
+            itemImageUrl: {data['product'][0]['itemImageUrl']}
+            itemModel: {data['product'][0]['itemModel']}
+            makerName: {data['product'][0]['makerName']}
 
             Answer in the following sentence format:
             "<Product Name> belongs to <garbage type>"
