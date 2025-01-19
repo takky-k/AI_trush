@@ -86,5 +86,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True  # For development only, configure properly for production
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # フロントエンドのURL
+    "http://localhost:3000",
+    "https://your-vercel-app.vercel.app",
+]
+
+# Use CORS_ALLOWED_ORIGIN_REGEXES for wildcard domains
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://nw-hacks2025-.*-sungwi-kims-projects\.vercel\.app$",
 ]
