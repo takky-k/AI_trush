@@ -9,10 +9,32 @@ from rest_framework.exceptions import APIException
 import openai
 
 load_dotenv()
+def call_openai(prompt):
+    gpt_key = os.getenv('OPENAI_API')
+    if not gpt_key:
+        raise ValueError("OpenAI API key is missing. Please set it as 'OPENAI_API' in your environment variables.")
+    openai.api_key = gpt_key
+    response = openai.ChatCompletion.create(
+        model = "gpt-3.5-turbo",
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.2
+    )
+    return response['choices'][0]['message']['content']
+
+class ClassifyByOpenAI(APIView):
+    def post(self, request):
+        prompt = request.data.get('prompt')
+        if not prompt:
+            return Response({'error': 'Prompt is required.'}, status=400)
+        text = call_openai(prompt)
+        return Response({"content": text})
+
 class ClassifyWaste(APIView):
     def post(self, request):
         item_code = request.data.get('item')
-        print("あああああああああああああ")
         print(item_code)
         if not item_code:
             return Response({'error': 'Item code is required.'}, status=400)
@@ -33,12 +55,6 @@ class ClassifyWaste(APIView):
                 print(data)
             
             # open ai
-            load_dotenv()
-            gpt_key = os.getenv('OPENAI_API')
-            print(f"api_key: {gpt_key}")
-            if not gpt_key:
-                raise ValueError("OpenAI API key is missing. Please set it as 'OPENAI_API' in your environment variables.")
-            openai.api_key = gpt_key
             prompt = f"""
             Based on the following product information, determine the type of garbage it would belong to (e.g., recyclable, organic, general waste, etc.):
 
@@ -50,18 +66,7 @@ class ClassifyWaste(APIView):
             Answer in the following sentence format:
             "<Product Name> belongs to <garbage type>"
             """
-            response = openai.ChatCompletion.create(
-                    model = "gpt-3.5-turbo",
-                    messages = [
-                        {"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.2
-                )
-            
-            # Process and return the relevant data to the client
-            text = response['choices'][0]['message']['content']
-            print(text)
+            text = call_openai(prompt)
             return Response({"content": text})
         except requests.exceptions.HTTPError as http_err:
             # Handle HTTP errors
