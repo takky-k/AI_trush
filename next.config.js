@@ -1,6 +1,7 @@
 let userConfig = undefined
 try {
-  userConfig = await import('./v0-user-next.config')
+  //userConfig = await import('./v0-user-next.config')
+  const userConfig = await import('./v0-user-next.config').then((mod) => mod.default);
 } catch (e) {
   // ignore error
 }
@@ -21,6 +22,7 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  reactStrictMode: true,
 }
 
 mergeConfig(nextConfig, userConfig)
