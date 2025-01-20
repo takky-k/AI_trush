@@ -2,14 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+
 body {
-  background-image: url('/background.webp'); /* publicフォルダの画像を指定 */
-  background-size: cover; /* 画面全体に画像をフィットさせる */
-  background-repeat: no-repeat; /* 画像の繰り返しを無効化 */
-  background-position: center; /* 画像を中央に配置 */
-  margin: 0; /* 余白を削除 */
-  height: 100vh; /* 高さを画面いっぱいに設定 */
+  font-family: Arial, Helvetica, sans-serif;
+  background-image: url('/background.webp') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
+
 
 @layer utilities {
   .text-balance {
